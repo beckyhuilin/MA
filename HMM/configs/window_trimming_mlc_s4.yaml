@@ -1,0 +1,60 @@
+input:
+  root: data/interim/interaction_windows
+  conditions: [AV0, AV1, AV2, HV1]
+  scenario_group: MLC
+  scenario_id: 4
+
+output:
+  trimmed_root: data/interim/lane_change_interaction_trimmed/MLC/4
+  diagnostics_root: outputs/figures/window_trimming_mlc/s4
+  test_root: outputs/test/lane_change_interaction_trimmed/MLC_S4
+
+coordinate:
+  method: fixed_ego_shared_coordinate
+  direction_window_sec: 1.0
+  y_positive_direction: right
+  target_lane_center_y_m: 0.0
+  initial_initiator_lane_center_y_m: -3.5
+  lane6_lane7_boundary_y_m: -1.75
+
+crossing:
+  crossing_time_diff_warning_sec: 0.5
+
+end_detection:
+  lateral_velocity_threshold_mps: 0.10
+  lateral_acc_threshold_mps2: 0.10
+  sensitivity_lateral_acc_threshold_mps2: 0.05
+  stable_duration_sec: 0.5
+  post_end_buffer_sec: 0.0
+
+# 仅在严格主规则无稳定窗口时使用；速度阈值与持续时间不放宽。
+fallback:
+  lateral_acc_threshold_mps2: 0.20
+  stable_duration_sec: 0.5
+
+# 仅用于 primary 与普通 fallback 都失败的 warning-revised 分支。
+warning_revised:
+  lateral_velocity_threshold_mps: 0.10
+  stable_duration_sec: 0.3
+  center_confirmation_duration_sec: 0.3
+  lane7_corridor_max_y_m: 0.50
+  lane7_corridor_exit_confirmation_duration_sec: 0.3
+
+spatial_diagnostics:
+  target_center_tolerances_m: [0.20, 0.30, 0.50]
+
+lane7_departure:
+  abs_y_main_threshold_m: 2.0
+  continuous_duration_sec: 0.3
+
+smoothing:
+  enabled: true
+  method: savgol
+  window_length_frames: 11
+  polyorder: 2
+
+diagnostics:
+  axis_limits:
+    y_main_m: [-4.5, 4.5]
+    v_y_mps: [-2.5, 2.5]
+    a_y_mps2: [-6.0, 6.0]

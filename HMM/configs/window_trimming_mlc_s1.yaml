@@ -1,0 +1,65 @@
+input:
+  root: data/interim/interaction_windows
+  conditions: [AV0, AV1, AV2, HV1]
+  scenario_group: MLC
+  scenario_id: 1
+
+map:
+  centerline_file: data/reference/centerlines_map1.csv
+  coordinate_transform: x_global_equals_x_map__y_global_equals_negative_y_map
+  lane_mapping:
+    spur1_lane5: [5, 218, 219, 220, 221]
+    spur2_lane6: [6, 192, 129, 148, 160]
+    spur3_lane7: [7, 193, 130, 149, 161]
+    spur5_merging: [195, 196, 194, 131, 150, 210, 211, 212]
+    transition: [163]
+
+output:
+  reconstruct_lateral_root: data/interim/lane_change_interaction_trimmed/MLC/1/reconstruct lateral
+  retrimmed_root: data/interim/lane_change_interaction_trimmed/MLC/1/retrimmed
+  reconstruction_summary_path: data/interim/lane_change_interaction_trimmed/MLC/1/mlc_s1_reconstruction_summary.csv
+  summary_path: data/interim/lane_change_interaction_trimmed/MLC/1/mlc_s1_retrimming_summary.csv
+  diagnostics_root: outputs/figures/window_trimming_mlc/s1
+  test_root: outputs/test/lane_change_interaction_trimmed/MLC_S1
+
+coordinate:
+  method: fixed_ego_shared_coordinate
+  direction_window_sec: 1.0
+  y_positive_direction: right
+
+start_detection:
+  lane_id: 131
+
+end_detection:
+  target_lane_raw_ids: [7, 193, 130, 149, 161]
+  lateral_velocity_threshold_mps: 0.10
+  lateral_acc_threshold_mps2: 0.10
+  sensitivity_lateral_acc_threshold_mps2: 0.05
+  stable_duration_sec: 0.5
+
+fallback:
+  lateral_acc_threshold_mps2: 0.20
+
+warning_revised:
+  start_lane_id: 161
+  lateral_velocity_threshold_mps: 0.20
+  lateral_acc_threshold_mps2: 0.20
+  stable_duration_sec: 0.5
+
+spatial_diagnostics:
+  target_center_tolerances_m: [0.20, 0.30, 0.50]
+
+smoothing:
+  enabled: true
+  method: savgol
+  window_length_frames: 11
+  polyorder: 2
+
+validation:
+  parallel_ramp_raw_ids: [131, 150]
+
+diagnostics:
+  axis_limits:
+    y_main_m: [-6.0, 6.0]
+    v_y_mps: [-2.5, 2.5]
+    a_y_mps2: [-6.0, 6.0]

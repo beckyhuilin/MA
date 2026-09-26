@@ -1,0 +1,45 @@
+input:
+  root: data/interim/interaction_windows
+  conditions: [AV0, AV1, AV2, HV1]
+  scenario_group: DLC
+  scenario_ids: [2, 3]
+
+output:
+  root: data/interim/lane_change_interaction_trimmed
+  summary_file: dlc_end_detection_summary.csv
+  diagnostics_root: outputs/figures/window_trimming_dlc
+  test_root: outputs/test
+
+diagnostics:
+  axis_limits:
+    y_relative_lane_boundary_m: [-3.5, 3.5]
+    v_y_mps: [-2.5, 2.5]
+    a_y_mps2: [-6.0, 6.0]
+    lane_id_by_scenario:
+      "2": [5.5, 7.5]
+      "3": [4.5, 6.5]
+
+coordinate:
+  direction_window_sec: 1.0
+
+lane:
+  lane_width_m: 3.5
+  main_road_lane_ids: [5, 6, 7]
+  target_lane_center_y: 0.0
+
+end_detection:
+  initial_lane_mode_window_sec: 0.5
+  crossing_time_diff_warning_sec: 0.5
+  target_center_tolerance_m: 0.3
+  lateral_velocity_threshold_mps: 0.10
+  lateral_acc_threshold_mps2: 0.10
+  sensitivity_lateral_acc_threshold_mps2: 0.05
+  stable_duration_sec: 0.5
+  post_end_buffer_sec: 0.0
+  fallback: keep_original_window
+
+smoothing:
+  enabled: true
+  method: savgol
+  window_length_frames: 11
+  polyorder: 2
