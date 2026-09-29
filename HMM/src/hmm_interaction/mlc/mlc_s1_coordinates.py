@@ -9,7 +9,6 @@ from scipy.signal import savgol_filter
 
 from map1_centerline_reconstruction import numeric, project_point_to_spur
 
-
 TIME_COLUMN = "TimeMS"
 EGO_X_COLUMN = "Ego.Global.X"
 EGO_Y_COLUMN = "Ego.Global.Y"
@@ -65,21 +64,6 @@ def estimate_main_road_direction(frame: pd.DataFrame, config: dict[str, Any]) ->
     return forward / np.linalg.norm(forward)
 
 
-# Stage B 只用 interaction 起始 1 秒的 Ego 首尾 Global 位移确定共享纵轴。
-def estimate_shared_ego_direction(frame: pd.DataFrame, config: dict[str, Any]) -> np.ndarray:
-    time = numeric(frame, TIME_COLUMN).to_numpy(float)
-    points = frame[[EGO_X_COLUMN, EGO_Y_COLUMN]].apply(pd.to_numeric, errors="coerce").to_numpy(float)
-    duration_ms = float(config["coordinate"]["direction_window_sec"]) * 1000.0
-    selected = np.flatnonzero(np.isfinite(time) & np.isfinite(points).all(axis=1) & (time <= time[0] + duration_ms))
-    if len(selected) < 2 or selected[0] != 0:
-        raise ValueError("interaction 起始 1 秒内缺少有效的 Ego 首尾 Global 位置。")
-    displacement = points[selected[-1]] - points[0]
-    distance = float(np.linalg.norm(displacement))
-    if not np.isfinite(distance) or distance <= np.finfo(float).eps:
-        raise ValueError("interaction 起始 1 秒的 Ego 位移无法确定共享坐标方向。")
-    return displacement / distance
-
-
 # 用 Ego 首个有效 Global 位置及 LateralDistance 回推其初始车道中心点。
 def compute_ego_initial_lane_origin(frame: pd.DataFrame, right_normal: np.ndarray) -> np.ndarray:
     position = first_valid_position(frame, (EGO_X_COLUMN, EGO_Y_COLUMN, EGO_LATERAL_DISTANCE_COLUMN))
@@ -99,7 +83,7 @@ def project_global_to_main_road(
     return offsets @ coordinate.forward, offsets @ coordinate.right_normal
 
 
-# 使用 DLC 同一套 Savgol 参数平滑横向位置。
+# 使用 DLC 同一套 Savgol 参数平滑横向位置，仅供运动学和终点检测使用。
 def smooth_lateral_position(y_main: pd.Series, config: dict[str, Any]) -> np.ndarray:
     values = pd.to_numeric(y_main, errors="coerce").astype(float)
     settings = config["smoothing"]
@@ -144,8 +128,8 @@ def build_mlc_s1_coordinates(
     time_ms = numeric(frame, TIME_COLUMN).to_numpy(float)
     if not np.isfinite(time_ms).all() or np.any(np.diff(time_ms) <= 0):
         raise ValueError("Scenario 1 的 TimeMS 必须为有限值且严格递增。")
-    forward = estimate_shared_ego_direction(frame, config)
-    # Map1→Global 的 Y 轴翻转表明 Global 为左手平面；右侧正方向需与 Map 重构一致。
+    forward = estimate_main_road_direction(frame, config)
+    # 保留 Scenario 1 已校准的物理右侧为正；三位数 LaneID 不用于方向翻转。
     right_normal = np.array([-forward[1], forward[0]])
     coordinate = SharedCoordinate(
         origin=compute_ego_initial_lane_origin(frame, right_normal),
